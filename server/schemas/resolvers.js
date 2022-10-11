@@ -1,5 +1,6 @@
 const {User, Thought} = require('../models');
 const {AuthenticationError} = require('apollo-server-express');
+const {signToken} = require('../utils/auth');
 
 const resolvers = {
     Query: {
@@ -34,7 +35,8 @@ const resolvers = {
         // Mongoose will create a new user with whatever is passed into args
         addUser: async (parent, args) => {
             const user = await User.create(args);
-            return user;
+            const token = signToken(user);
+            return {token, user};
         },
         login: async (parent, {email, password}) => {
             // checking if user exists
@@ -47,7 +49,8 @@ const resolvers = {
             if (!correctPw) {
                 throw new AuthenticationError('Incorrect credentials');
             }
-            return user;
+            const token = signToken(User);
+            return {token, user};
         }
     }
 };
