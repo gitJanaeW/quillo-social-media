@@ -8,7 +8,8 @@ import Home from './pages/Home';
 
 // establish link to GraphQL server with specified endpoint
 const httpLink = createHttpLink({
-  uri: 'http://localhost:3001/graphql',
+  // uri stands for 'uniform resource identifier'
+  uri: '/graphql',
 });
 // create a new instance of Apollo Client and connection to it
 const client = new ApolloClient({
