@@ -19,6 +19,17 @@ const resolvers = {
                 .populate('friends')
                 .populate('thoughts');
         },
+        // get your own user details
+        me: async (parent, args, context) => {
+            if (context.user) {
+                const userData = await User.findOne({})
+                    .select('-__v -password')
+                    .populate('thoughts')
+                    .populate('friends');
+                return userData;
+            }
+            throw new AuthenticationError('Not logged in');
+        },
         // get thought (or a specfic user's thoughts)
         thoughts: async (parent, {username}) => {
             // if username, query the specific username. else, no params needed 
@@ -38,6 +49,19 @@ const resolvers = {
             const token = signToken(user);
             return {token, user};
         },
+        addThought: async (parent, args, context) => {
+            if (context.user) {
+                // spread operator gets everything in args individually and then also adds context.user.username to the object
+                const thought = await Thought.create({...args, username: context.user.username});
+                await User.findByIdAndUpdate(
+                    {_id: context.user._id},
+                    {$push: {thoughts: thought._id}},
+                    {new: true}
+                );
+                return thought;
+            }
+            throw new AuthenticationError('You are not logged in.')
+        },
         login: async (parent, {email, password}) => {
             // checking if user exists
             const user = await User.findOne({email});
@@ -45,8 +69,8 @@ const resolvers = {
                 throw new AuthenticationError('Incorrect credentials');
             }
             // checking if password of user is corrext
-            const correctPW = await user.isCorrectPassword(isCorrectPassword);
-            if (!correctPw) {
+            const correctPW = await user.isCorrectPassword(password);
+            if (!correctPW) {
                 throw new AuthenticationError('Incorrect credentials');
             }
             const token = signToken(User);
