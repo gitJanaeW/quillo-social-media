@@ -7,6 +7,8 @@ import {
   ApolloProvider,
   createHttpLink,
 } from '@apollo/client';
+// setContext is essentially middleware that the token and combines it with the httpLink
+import {setContext} from '@apollo/client/link/context';
 // components
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -23,9 +25,22 @@ const httpLink = createHttpLink({
   uri: '/graphql',
 });
 
+// get the token from localStorage and use setContext to add token to Authorization header
+const authLink = setContext((_, {headers}) => {
+  // not every request requires a token, but MOST do so we'll always get the token, even if it's not needed
+  const token = localStorage.getItem('id_token');
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? `Bearer ${token}` : '',
+    }
+  }
+})
+
 // create a new instance of Apollo Client and connection to it
 const client = new ApolloClient({
-  link: httpLink,
+  // combine httpLink and authLink so each request is handled graphql and the token are used before every request
+  link: authLink.concat(httpLink),
   cache: new InMemoryCache(),
 });
 
